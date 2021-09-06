@@ -6,7 +6,9 @@
 #include <glm/glm.hpp>
 
 #include <vector>
-#include <deque>
+#include <list>
+#include <chrono>
+#include <math.h> 
 
 /*
  * PongMode is a game mode that implements a single-player game of Pong.
@@ -22,27 +24,44 @@ struct PongMode : Mode {
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 
 	//----- game state -----
-
 	glm::vec2 court_radius = glm::vec2(7.0f, 5.0f);
-	glm::vec2 paddle_radius = glm::vec2(0.2f, 1.0f);
-	glm::vec2 ball_radius = glm::vec2(0.2f, 0.2f);
+	glm::vec2 paddle_radius = glm::vec2(0.5f, 1.0f);
 
 	glm::vec2 left_paddle = glm::vec2(-court_radius.x + 0.5f, 0.0f);
 	glm::vec2 right_paddle = glm::vec2( court_radius.x - 0.5f, 0.0f);
+	glm::vec2 left_bullet_offset = glm::vec2( paddle_radius.x+0.2, -0.3);
+	glm::vec2 right_bullet_offset = glm::vec2( -paddle_radius.x-0.2, -0.3);
 
-	glm::vec2 ball = glm::vec2(0.0f, 0.0f);
-	glm::vec2 ball_velocity = glm::vec2(-1.0f, 0.0f);
+	bool right_got_hit = false;
+	bool left_got_hit = false;
 
-	uint32_t left_score = 0;
-	uint32_t right_score = 0;
+	// player movement
+	const float paddle_move_speed = 10.0f; 
+	int left_move_dir = 0; // 0 for no move; 1,2,3,4 for up down left right
+	int right_move_dir = 0; // 0 for no move; 1,2,3,4 for up down left right
 
-	float ai_offset = 0.0f;
-	float ai_offset_update = 0.0f;
+	// player status
+	int maxHp = 100;
+	int leftHp = maxHp;
+	int rightHp = maxHp;
 
-	//----- pretty gradient trails -----
-
-	float trail_length = 1.3f;
-	std::deque< glm::vec3 > ball_trail; //stores (x,y,age), oldest elements first
+	// bullets
+	struct bullet{
+		int m_shooter; // 1 for left, 2 for right
+		float m_speed;
+		float m_radius;
+		int m_bulletLevel;
+		glm::vec2 m_pos;
+		bullet(int shooter, float speed, float radius, int bulletLevel,glm::vec2 pos):
+			m_shooter(shooter),m_speed(speed),m_radius(radius), m_pos(pos), m_bulletLevel(bulletLevel){};
+	};
+	std::list<bullet> bullets;
+	float left_bullet_store_time = 0;
+	float right_bullet_store_time = 0;
+	float bullet_levelup_needed_time = 1.5f;
+	int left_bullet_level = 0;
+	int right_bullet_level = 0;
+	int bulletDmg[4] = {0,10,25,40};
 
 	//----- opengl assets / helpers ------
 
